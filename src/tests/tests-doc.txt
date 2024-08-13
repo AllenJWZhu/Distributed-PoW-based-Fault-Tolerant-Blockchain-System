@@ -1,0 +1,70 @@
+package tests // import "blockchain/tests"
+
+
+CONSTANTS
+
+const (
+	N = 3
+)
+    N defines the number of miners to select for writing posts.
+
+
+FUNCTIONS
+
+func ReadBlockchain(port int) []blockchain.Block
+    ReadBlockchain queries a miner and retrieves the blockchain content.
+
+func WriteBlockchain(port int, content string) error
+    WriteBlockchain submits a post to a miner for inclusion in the blockchain.
+
+
+TYPES
+
+type PartitionTracker struct {
+	miners      map[int]*time.Timer // maps each miner's port to its expiration timer
+	lock        sync.Mutex          // protects access to the miners map
+	router      *gin.Engine         // HTTP router for handling API requests
+	server      *http.Server        // HTTP server to serve API requests
+	partitioned atomic.Bool         // flag to control network partitioning behavior
+}
+    PartitionTracker manages a list of blockchain miners and supports network
+    partitioning for testing.
+
+func NewPartitionTracker(port int) *PartitionTracker
+    NewPartitionTracker creates and initializes a new PartitionTracker instance.
+    It sets up HTTP routes and prepares the server to listen on the specified
+    port.
+
+func (t *PartitionTracker) Partition(partition bool)
+    Partition toggles the network partition status.
+
+func (t *PartitionTracker) Shutdown()
+    Shutdown gracefully stops the HTTP server with a timeout.
+
+func (t *PartitionTracker) Start()
+    Start initiates the HTTP server to handle incoming requests.
+
+func (t *PartitionTracker) getMinersHandler() (int, any)
+    getMinersHandler provides a list of registered miners.
+
+func (t *PartitionTracker) registerHandler(request Tracker.PortJson) (int, any)
+    registerHandler processes the /register API requests to manage miner
+    registrations.
+
+type mockTracker struct {
+	miners []int // List of miner port numbers.
+}
+    mockTracker is a mock implementation of the tracker server used in tests.
+    It simulates the behavior of a real tracker by providing a predefined list
+    of miners.
+
+func newMockTracker(miners []int) *mockTracker
+    newMockTracker creates a new instance of the mock tracker with a specified
+    list of miners. This function is used in tests to set up a tracker with
+    controlled behavior and predictable output.
+
+func (t *mockTracker) handleGetMiners(w http.ResponseWriter, r *http.Request)
+    handleGetMiners handles the HTTP GET request to retrieve the list of miners
+    from the mock tracker. It encodes and returns the list of miner ports in a
+    JSON format, simulating the response of a real tracker server.
+

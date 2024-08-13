@@ -1,0 +1,102 @@
+package miner // import "blockchain/miner"
+
+
+CONSTANTS
+
+const HeartbeatMax = 400
+    HeartbeatMax - Miner's heartbeat interval is randomly chosen from
+    HeartbeatMin to HeartbeatMax.
+
+const HeartbeatMin = 200
+    HeartbeatMin - Miner's heartbeat interval is randomly chosen from
+    HeartbeatMin to HeartbeatMax.
+
+const MiningIterations = 10000
+    MiningIterations - Each call to mine() will try MiningIterations different
+    nonces at most, before mine() returns.
+
+const PostsPerBlock = 2
+    PostsPerBlock - Miner will pack at most PostsPerBlock posts to each block.
+
+const SyncMax = 600
+    SyncMax - Miner's sync interval is randomly chosen from SyncMin to SyncMax.
+
+const SyncMin = 300
+    SyncMin - Miner's sync interval is randomly chosen from SyncMin to SyncMax.
+
+
+TYPES
+
+type BlockChainJson struct {
+	Blockchain []blockchain.BlockBase64 `json:"blockchain"`
+}
+
+type Miner struct {
+	blockChain  []blockchain.Block // current blockchain
+	cmp         utils.Comparator   // comparator for posts and pool
+	posts       *treeset.Set       // all posts on the current blockchain, sorted by timestamp
+	pool        *treeset.Set       // posts to be posted to the blockchain
+	port        int                // http port
+	trackerPort int                // tracker's http port
+	router      *gin.Engine        // http router
+	server      *http.Server       // http server
+	lock        sync.RWMutex       // protects all writable fields
+	quit        chan struct{}      // notify the background routine to quit
+}
+    Miner - a Miner in the blockchain system.
+
+func NewMiner(port int, trackerPort int) *Miner
+    NewMiner - creates a new Miner, but does not start its http server and
+    background routine yet.
+
+func (m *Miner) Shutdown()
+    Shutdown - stops the Miner's background routine and http server.
+
+func (m *Miner) Start()
+    Start - starts the Miner's background routine and http server.
+
+func (m *Miner) broadcastHandler(newChain []blockchain.Block) (int, any)
+    broadcastHandler - handles /broadcast request from a peer miner if the
+    incoming blockchain is valid and longer than this miner's blockchain,
+    switch to the new blockchain
+
+func (m *Miner) broadcastTo(peer int, data []byte, wg *sync.WaitGroup)
+    broadcastTo - broadcast a newly mined block to one peer
+
+func (m *Miner) mine(peers []int)
+    mine - try to mine one block. It will try at most MiningIterations
+    iterations before it returns. If successful, it will broadcast the new block
+    to peers, and append the new block to the local blockchain.
+
+func (m *Miner) readHandler() (int, any)
+    readHandler - handles /read request from a user encodes and returns the
+    miner's complete blockchain
+
+func (m *Miner) register() []int
+    register - register this miner to the tracker. Also responsible for sending
+    heartbeats to the tracker.
+
+func (m *Miner) registerAPIs()
+    registerAPIs - register APIs to the Miner's http router.
+
+func (m *Miner) routine()
+    routine - A miner's background routine. Responsible for sending heartbeats
+    to the tracker, syncing with peers and mining. In one loop, routine will
+    check if it needs to send heartbeats or syncs with peers, and then call
+    mine() once.
+
+func (m *Miner) syncHandler(posts []blockchain.Post) (int, any)
+    syncHandler - handles /sync request from a peer miner unions this miner's
+    post pool and the posts sent to the API
+
+func (m *Miner) syncWith(peer int, data []byte, wg *sync.WaitGroup)
+    syncWith - sync Miner's pool with one peer
+
+func (m *Miner) writeHandler(post blockchain.Post) (int, any)
+    writeHandler - handles /write request from a user decodes, verifies and adds
+    a user's post to miner's pool
+
+type PostsJson struct {
+	Posts []blockchain.PostBase64 `json:"posts"`
+}
+

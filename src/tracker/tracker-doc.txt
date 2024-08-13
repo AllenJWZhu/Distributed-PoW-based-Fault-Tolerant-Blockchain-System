@@ -1,0 +1,43 @@
+package tracker // import "blockchain/tracker"
+
+
+CONSTANTS
+
+const EntryTimeout = 500 * time.Millisecond
+    EntryTimeout - A miner entry expires after EntryTimeout, if no heartbeats
+    are received.
+
+
+TYPES
+
+type PortJson struct {
+	Port int `json:"port"`
+}
+
+type PortsJson struct {
+	Ports []int `json:"ports"`
+}
+
+type Tracker struct {
+	miners map[int]*time.Timer // maps each miner's port to its expiration timer
+	lock   sync.Mutex          // protects miners for concurrent access
+	router *gin.Engine         // http router
+	server *http.Server        // http server
+}
+    Tracker - A Tracker in the blockchain system.
+
+func NewTracker(port int) *Tracker
+    NewTracker - creates a new Tracker, but does not start its http server yet.
+
+func (t *Tracker) Shutdown()
+    Shutdown - shuts down the Tracker's http server.
+
+func (t *Tracker) Start()
+    Start - starts the Tracker's http server.
+
+func (t *Tracker) getMinersHandler() (int, any)
+    getMinersHandler - handles request to /get_miners API.
+
+func (t *Tracker) registerHandler(request PortJson) (int, any)
+    registerHandler - handles request to /register API.
+
