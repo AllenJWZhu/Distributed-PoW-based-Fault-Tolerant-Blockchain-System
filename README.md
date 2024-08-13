@@ -1,5 +1,7 @@
 # Proof-of-Work Blockchain Consensus System
 
+![PoW Architecture](PoW.png)
+
 ## Table of Contents
 1. [Overview](#overview)
 2. [System Architecture](#system-architecture)
